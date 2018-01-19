@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <png.h>
-#include <fftw3.h>
+
 #include "export_png.h"
 
 void export_png (
