@@ -3,29 +3,29 @@
 #include <math.h>
 #include <png.h>
 #include <fftw3.h>
-#include "exportar_png.h"
+#include "export_png.h"
 
-void exportar_png (
+void export_png (
 	double data[],
-	unsigned ventana,
-	unsigned largo,
-	unsigned alto,
-	char nombre_archivo[]
+	unsigned window,
+	unsigned length,
+	unsigned height,
+	char filename[]
 ) {
-	FILE *archivo = fopen (nombre_archivo, "wb");
-	unsigned char *pixeles = malloc (largo * alto * sizeof (unsigned char));
-	for (unsigned x = 0; x < largo; x++) {
-		for (unsigned y = 0; y < alto; y++) {
-			int pos_data = x * ventana + y * (((float)alto)/((float)ventana));
-			//unsigned char valor = (255 * data[x * ventana + y * (alto/ventana)][0]);
-			double valor = (data[pos_data]);
-			pixeles [(alto-y-1)*largo + x] = (unsigned char)(255 * (valor));
+	FILE *file = fopen (filename, "wb");
+	unsigned char *pixels = malloc (length * height * sizeof (unsigned char));
+	for (unsigned x = 0; x < length; x++) {
+		for (unsigned y = 0; y < height; y++) {
+			int pos_data = x * window + y * (((float)height)/((float)window));
+			//unsigned char value = (255 * data[x * window + y * (height/window)][0]);
+			double value = (data[pos_data]);
+			pixels [(height-y-1)*length + x] = (unsigned char)(255 * (value));
 		}
 	}
-	write_png (pixeles, largo, alto, archivo);
+	write_png (pixels, length, height, file);
 
-	free (pixeles);
-	fclose (archivo);
+	free (pixels);
+	fclose (file);
 }
 
 
