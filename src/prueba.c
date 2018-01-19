@@ -16,18 +16,35 @@ unsigned hann (double *data, unsigned length, double *output) {
 	return length;
 }
 
-fftw_complex *generar_espectrograma (double data[], unsigned length, unsigned ventana) {
+double *generar_espectrograma (double data[], unsigned length, unsigned ventana) {
 	fftw_plan plan;
-	fftw_complex *output = fftw_alloc_complex (length);
+	double *output = malloc (sizeof(double) * length);
 	double *data_hanned = malloc (sizeof (double) * ventana);
 	/* warning: el procesamiento se trunca a un multiplo de ventana */
 	for (unsigned posicion = 0; posicion + ventana <= length; posicion += ventana) {
 		hann (data + posicion, ventana, data_hanned);
-		plan = fftw_plan_dft_r2c_1d (ventana, data_hanned, output + posicion, FFTW_ESTIMATE);
+		plan = fftw_plan_r2r_1d (ventana, data_hanned, output + posicion, FFTW_REDFT00, FFTW_ESTIMATE);
 		fftw_execute (plan);
 		fftw_destroy_plan (plan);
 	}
 	free (data_hanned);
+	return output;
+}
+
+double smooth (double valor) {
+	if (valor > 1) {
+		return 1;
+	} else {
+		return (M_PI/2+asin(((2*valor-1))))/M_PI;
+	}
+}
+
+double *arreglar_espectrograma (double *input, unsigned long largo_data) {
+	double *output = malloc (sizeof (double) * largo_data);
+	int i;
+	for (i=0; i < largo_data; i++) {
+		output[i] = smooth (input[i]);
+	}
 	return output;
 }
 
@@ -39,12 +56,12 @@ void mostrar_data (double data[], unsigned length) {
 	printf ("\n");
 }
 
-void mostrar_espectrograma (fftw_complex data[], unsigned length, unsigned ventana) {
+void mostrar_espectrograma (double data[], unsigned length, unsigned ventana) {
 	char *signo, *separador;
 	for (unsigned n_muestra = 0; n_muestra < length; n_muestra++) {
-		signo = (data[n_muestra][1] >= 0)? "+": "";
+		signo = (data[n_muestra] >= 0)? "+": "";
 		separador = ((n_muestra+1) % ventana == 0)? "\n": ", ";
-		printf ("%e%s%ei%s", data [n_muestra][0], signo, data [n_muestra][0], separador);
+		printf ("%e%s%ei%s", data [n_muestra], signo, data [n_muestra], separador);
 	}
 	printf ("\n");
 }
@@ -52,9 +69,10 @@ void mostrar_espectrograma (fftw_complex data[], unsigned length, unsigned venta
 int main (int argc, char *args[]) {
 	double *data;
 	unsigned long largo_data = load_wav (args[1], &data);
-	unsigned ventana = 256;
-	fftw_complex *espectrograma;
+	unsigned ventana = 128;
+	double *espectrograma, *arreglado;
 	espectrograma = generar_espectrograma (data, largo_data, ventana);
-	exportar_png (espectrograma, ventana, largo_data/ventana, ventana, "output/espectrograma.png");
+	arreglado = arreglar_espectrograma (espectrograma, largo_data);
+	exportar_png (arreglado, ventana, largo_data/ventana, ventana, "output/espectrograma.png");
 	free (espectrograma);
 }

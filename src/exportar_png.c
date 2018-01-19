@@ -1,11 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <png.h>
 #include <fftw3.h>
 #include "exportar_png.h"
 
 void exportar_png (
-	fftw_complex data[],
+	double data[],
 	unsigned ventana,
 	unsigned largo,
 	unsigned alto,
@@ -17,8 +18,8 @@ void exportar_png (
 		for (unsigned y = 0; y < alto; y++) {
 			int pos_data = x * ventana + y * (((float)alto)/((float)ventana));
 			//unsigned char valor = (255 * data[x * ventana + y * (alto/ventana)][0]);
-			double valor = (data[pos_data][0]);
-			pixeles [(alto-y-1)*largo + x] = (unsigned char)(255 * valor);
+			double valor = (data[pos_data]);
+			pixeles [(alto-y-1)*largo + x] = (unsigned char)(255 * (valor));
 		}
 	}
 	write_png (pixeles, largo, alto, archivo);
@@ -26,6 +27,7 @@ void exportar_png (
 	free (pixeles);
 	fclose (archivo);
 }
+
 
 void write_png (unsigned char *data, unsigned int width, unsigned int height, FILE *file) {
 	png_structp png_ptr = png_create_write_struct (PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
