@@ -8,21 +8,21 @@
 void export_png (
 	double data[],
 	unsigned window,
-	unsigned length,
+	unsigned width,
 	unsigned height,
 	char filename[]
 ) {
 	FILE *file = fopen (filename, "wb");
-	unsigned char *pixels = malloc (length * height * sizeof (unsigned char));
-	for (unsigned x = 0; x < length; x++) {
+	unsigned char *pixels = malloc (width * height * sizeof (unsigned char));
+	for (unsigned x = 0; x < width; x++) {
 		for (unsigned y = 0; y < height; y++) {
 			int pos_data = x * window + y * (((float)height)/((float)window));
 			//unsigned char value = (255 * data[x * window + y * (height/window)][0]);
 			double value = (data[pos_data]);
-			pixels [(height-y-1)*length + x] = (unsigned char)(255 * (value));
+			pixels [(height-y-1)*width + x] = (unsigned char)(255 * (value));
 		}
 	}
-	write_png (pixels, length, height, file);
+	write_png (pixels, width, height, file);
 
 	free (pixels);
 	fclose (file);
