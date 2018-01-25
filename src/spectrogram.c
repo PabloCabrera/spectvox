@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdbool.h>
 #include <math.h>
 #include <fftw3.h>
 
@@ -50,7 +51,35 @@ double *reduce_spectrogram (double data[], unsigned length, unsigned window) {
 
 void export_raw_spectrogram (double data[], unsigned length, char *filename) {
 	FILE *file = fopen (filename, "w");
-	fwrite (data, sizeof (double),  length, file);
+	fwrite (data, sizeof (double), length, file);
+}
+
+unsigned long import_raw_spectrogram (double **data, char *filename) {
+	/* Max 4GiB */
+	int stop = false;
+	double *tmp_data = 0;
+	unsigned long buffer_size = 0;
+	unsigned long total_readed = 0;
+	FILE *file = fopen (filename, "r");
+
+	if (file == NULL) {
+		return -1;
+	}
+
+	while (!stop) {
+		if (total_readed + 1024 > buffer_size) {
+			tmp_data = realloc (tmp_data, (buffer_size + 1024) * sizeof (double));
+			buffer_size += 1024;
+		}
+		unsigned long readed = fread (tmp_data + total_readed, sizeof (double), 64, file);
+		total_readed += readed;
+		if (readed < 64) {
+			stop = true;
+		}
+	}
+
+	*data = tmp_data;
+	return total_readed;
 }
 
 void smooth_spectrogram (double *input, unsigned long data_length) {

@@ -1,5 +1,6 @@
 /* This file was automatically generated.  Do not edit! */
 double smooth(double valor);
+unsigned long import_raw_spectrogram(double **data,char *filename);
 void export_raw_spectrogram(double data[],unsigned length,char *filename);
 double *reduce_spectrogram(double data[],unsigned length,unsigned window);
 void smooth_spectrogram(double *input,unsigned long data_length);
