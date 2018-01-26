@@ -38,7 +38,7 @@ double *reduce_spectrogram (double data[], unsigned length, unsigned window) {
 	double *output = malloc (sizeof(double) * length/4);
 	int total_rows = length / (window * 2);
 	int total_cols = window/2;
-	fprintf (stderr, "Reducir espectrograma:\nAncho:%d  Alto: %d\n\n", total_cols, total_rows);
+	// fprintf (stderr, "Reducir espectrograma:\nAncho:%d  Alto: %d\n\n", total_cols, total_rows);
 	int row, col, pos;
 	for (row = 0; row < total_rows; row++) {
 		for (col = 0; col < total_cols; col++) {
