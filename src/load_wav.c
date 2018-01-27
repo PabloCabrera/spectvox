@@ -32,5 +32,6 @@ unsigned long load_wav (char *filename, double **buffer) {
 	if (readed_samples < info.frames * info.channels) {
 		fprintf (stderr, "Warning: De un total de %d samples, se han leido solo %ld\n", info.frames, readed_samples);
 	}
+	sf_close (file);
 	return (unsigned long) readed_samples;
 }
