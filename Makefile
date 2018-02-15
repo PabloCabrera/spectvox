@@ -31,7 +31,7 @@ src/pngtest.h: src/pngtest.c
 	makeheaders src/pngtest.c
 
 bin/wavtest: src/load_wav.c src/load_wav.h src/wavtest.c
-	gcc -std=gnu99 ${SND_FLAGS} src/wavtest.c src/load_wav.c -o bin/wavtest
+	gcc -std=gnu99 src/wavtest.c src/load_wav.c ${SND_FLAGS} -o bin/wavtest
 
 src/load_wav.h: src/load_wav.c
 	makeheaders src/load_wav.c

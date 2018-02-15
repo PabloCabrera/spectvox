@@ -90,8 +90,10 @@ void smooth_spectrogram (double *input, unsigned long data_length) {
 }
 
 double smooth (double valor) {
-	if (valor > 1) {
+	if (valor >= 1) {
 		return 1;
+	} else if (valor <= 0) {
+		return 0;
 	} else {
 		return (M_PI/2+asin(((2*valor-1))))/M_PI;
 	}
