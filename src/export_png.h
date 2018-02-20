@@ -1,3 +1,4 @@
 /* This file was automatically generated.  Do not edit! */
-void write_png(unsigned char *data,unsigned int width,unsigned int height,FILE *file);
-void export_png(double data[],unsigned window,unsigned width,unsigned height,char filename[]);
+void export_color_png(double data[],long window,long width,long height,char filename[]);
+void write_png(unsigned char *data,long width,long height,FILE *file,unsigned color);
+void export_grayscale_png(double data[],long window,long width,long height,char filename[]);

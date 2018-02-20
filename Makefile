@@ -4,16 +4,16 @@ PNG_FLAGS=`libpng-config --cflags --ldflags`
 SND_FLAGS=-lsndfile
 ALL_FLAGS=${PNG_FLAGS} ${MATH_FLAGS} ${FFTW_FLAGS} ${SND_FLAGS}
 
-all: bin/test bin/pngtest bin/wavtest bin/import_test bin/spectvox
+all: bin/spectvox
+
+bin/spectvox: src/batch_exporter.c src/export_png.c src/export_png.h src/load_wav.h src/load_wav.c src/spectrogram.c src/spectrogram.h
+	gcc -std=gnu99 src/batch_exporter.c src/export_png.c src/load_wav.c src/spectrogram.c ${ALL_FLAGS} -o bin/spectvox
 
 bin/test: src/test.c src/test.h src/export_png.c src/export_png.h src/load_wav.h src/load_wav.c src/spectrogram.c src/spectrogram.h
 	gcc -std=gnu99 src/test.c src/export_png.c src/load_wav.c src/spectrogram.c ${ALL_FLAGS} -o bin/test
 
 bin/import_test: src/import_test.c src/export_png.c src/export_png.h src/spectrogram.c src/spectrogram.h
 	gcc -std=gnu99 src/import_test.c src/export_png.c src/spectrogram.c ${ALL_FLAGS} -o bin/import_test
-
-bin/spectvox: src/batch_exporter.c src/export_png.c src/export_png.h src/load_wav.h src/load_wav.c src/spectrogram.c src/spectrogram.h
-	gcc -std=gnu99 src/batch_exporter.c src/export_png.c src/load_wav.c src/spectrogram.c ${ALL_FLAGS} -o bin/spectvox
 
 src/test.h: src/test.c
 	makeheaders src/test.c

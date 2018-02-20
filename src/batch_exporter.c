@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <sndfile.h>
 
@@ -14,17 +15,16 @@ struct program_options {
 	char *input_filename;
 	FILE *input_file;
 	char *loading_error;
-	int generate_png_fullsize;
-	int generate_png_halfsize;
-	int generate_raw_fullsize;
-	int generate_raw_halfsize;
-	unsigned spectrogram_window_size;
+	long spectrogram_window_size;
+	bool generate_png;
+	bool generate_raw;
+	bool color;
 };
 
 
 /* FUNCTION PROTOTYPES */
 int main (int argc, char *args[]);
-void nextstep (char *filename, struct program_options options);
+void nextstep (char *filename, struct program_options options, bool color);
 void print_usage (char *bin_filename);
 struct program_options get_options (int argc, char *args[]);
 void trim_line (char *line);
@@ -45,7 +45,9 @@ int main (int argc, char *args[]) {
 	size_t line_size = 512;
 	while (getline (&line, &line_size, file) > 0) {
 		trim_line (line);
-		nextstep (line, options);
+		if (strlen (line) > 0) {
+			nextstep (line, options, options.color);
+		}
 	}
 
 	free (line);
@@ -53,51 +55,49 @@ int main (int argc, char *args[]) {
 	return 0;
 }
 
-void nextstep (char *filename, struct program_options options) {
-	double *wav_data, *fullsize_spectrogram;
-	unsigned long data_length = load_wav (filename, &wav_data);
-	unsigned window = options.spectrogram_window_size;
+void nextstep (char *filename, struct program_options options, bool color) {
+	double *wav_data, *spectrogram;
+	long data_length = load_wav (filename, &wav_data);
+	long window = options.spectrogram_window_size;
 	char *out_filename;
 	
-	fullsize_spectrogram = generate_smooth_spectrogram (wav_data, data_length, window);
+	spectrogram = generate_smooth_spectrogram (wav_data, data_length, window);
+	if (options.color) {
+		double *grayscale_spectrogram = spectrogram;
+		spectrogram = colorize_spectrogram (grayscale_spectrogram, data_length);
+		free (grayscale_spectrogram);
+	}
 	
-	if (options.generate_png_fullsize) {
+	if (options.generate_png) {
 		out_filename = replace_extension (filename, ".png");
-		export_png (fullsize_spectrogram, window, data_length/window, window, out_filename);
+		if (options.color) {
+			export_color_png (spectrogram, window, data_length/window, window, out_filename);
+		} else {
+			export_grayscale_png (spectrogram, window, data_length/window, window, out_filename);
+		}
 		free (out_filename);
 	}
-	if (options.generate_raw_fullsize) {
+	if (options.generate_raw) {
 		out_filename = replace_extension (filename, ".raw");
-		export_raw_spectrogram (fullsize_spectrogram, data_length, out_filename);
+		if (options.color) {
+			export_raw_spectrogram (spectrogram, 3*data_length, out_filename);
+		} else {
+			export_raw_spectrogram (spectrogram, data_length, out_filename);
+		}
 		free (out_filename);
 	}
 
-	if  (options.generate_png_halfsize || options.generate_raw_halfsize) {
-		double *halfsize_spectrogram = reduce_spectrogram (fullsize_spectrogram, data_length, window);
-		if  (options.generate_png_halfsize) {
-			out_filename = replace_extension (filename, ".half.png");
-			export_png (halfsize_spectrogram, window/2, data_length/(window*2), window/2, out_filename);
-			free (out_filename);
-		}
-		if  (options.generate_png_halfsize) {
-			out_filename = replace_extension (filename, ".half.raw");
-			export_raw_spectrogram (fullsize_spectrogram, data_length/4, out_filename);
-			free (out_filename);
-		}
-		free (halfsize_spectrogram);
-	}
 
-	free (fullsize_spectrogram);
+	free (spectrogram);
 	free (wav_data);
 }
 
 void print_usage (char *bin_filename) {
 	printf ("%s [OPTIONS] input_file\n", bin_filename);
 	printf ("OPTIONS:\n");
-	("\t-p Generate PNG spectrogram images (Default type)");
-	("\t-r Generate raw spectrogram data files");
-	("\t-h Generate full size and half size spectrograms");
-	("\t-H Generate only half size spectrograms");
+	printf ("\t-p Generate PNG spectrogram images (Default type)\n");
+	printf ("\t-r Generate raw spectrogram data files\n");
+	printf ("\t-c Generate colored spectrogram\n");
 }
 
 struct program_options get_options (int argc, char *args[]) {
@@ -121,25 +121,16 @@ struct program_options get_options (int argc, char *args[]) {
 	}
 
 	int current_arg;
-	int png = 0;
-	int raw = 0;
-	int full = 1;
-	int half = 0;
 	for (current_arg = 1; current_arg < argc -1; current_arg++) {
-		png = png  || (index (args [current_arg], 'p') != NULL);
-		raw = raw || (index (args [current_arg], 'r') != NULL); 
-		half = half || (index (args [current_arg], 'h') != NULL) || (index (args [current_arg], 'H') != NULL);
-		full = full && (index (args [current_arg], 'H') == NULL);
+		options.generate_png = (index (args [current_arg], 'p') != NULL);
+		options.generate_raw = (index (args [current_arg], 'r') != NULL); 
+		options.color = (index (args [current_arg], 'c') != NULL); 
 	}
 
-	if (!raw && !png) {
-		png = 1;
+	if (!options.generate_raw && !options.generate_png) {
+		options.generate_png = true;
+		options.generate_raw = false;
 	}
-
-	options.generate_png_fullsize = (full && png);
-	options.generate_png_halfsize = (half && png);
-	options.generate_raw_fullsize = (full && raw);
-	options.generate_raw_halfsize = (half && raw);
 
 	return options;
 }

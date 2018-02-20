@@ -7,8 +7,8 @@ void print_wav_info (struct SF_INFO *info, double *buffer) {
 	fprintf( stderr, "Channels: %d\n", info-> channels );
 	fprintf( stderr, "Frames: %ld\n", info-> frames );
 	FILE *dump = fopen ("dump.txt", "w");
-	unsigned long num_samples = info-> channels * info-> frames;
-	for (unsigned long i = 0; i < num_samples; i ++) {
+	long num_samples = info-> channels * info-> frames;
+	for (long i = 0; i < num_samples; i ++) {
 		char *delimiter = (i % 12)? ", ": "\n";
 		fprintf (dump, "%f%s", buffer[i], delimiter);
 	}
@@ -16,7 +16,7 @@ void print_wav_info (struct SF_INFO *info, double *buffer) {
 }
 
 /* WARNING: El puntero devuelto por esta funcion en buffer debe ser liberado */
-unsigned long load_wav (char *filename, double **buffer) {
+long load_wav (char *filename, double **buffer) {
 	struct SF_INFO info;
 	SNDFILE *file = sf_open (filename, SFM_READ, &info);
 	if (info.channels != 1) {
@@ -33,5 +33,5 @@ unsigned long load_wav (char *filename, double **buffer) {
 		fprintf (stderr, "Warning: De un total de %d samples, se han leido solo %ld\n", info.frames, readed_samples);
 	}
 	sf_close (file);
-	return (unsigned long) readed_samples;
+	return (long) readed_samples;
 }
