@@ -9,6 +9,7 @@
 #include "spectrogram.h"
 
 #define SPECTROGRAM_WINDOW_SIZE_DEFAULT 128
+#define WINDOW_OVERLAP 4
 
 /* DATA TYPES */
 struct program_options {
@@ -61,19 +62,20 @@ void nextstep (char *filename, struct program_options options, bool color) {
 	long window = options.spectrogram_window_size;
 	char *out_filename;
 	
-	spectrogram = generate_smooth_spectrogram (wav_data, data_length, window);
+	spectrogram = generate_smooth_spectrogram (wav_data, data_length, window, WINDOW_OVERLAP);
+	//spectrogram = generate_spectrogram (wav_data, data_length, window, WINDOW_OVERLAP);
 	if (options.color) {
 		double *grayscale_spectrogram = spectrogram;
-		spectrogram = colorize_spectrogram (grayscale_spectrogram, data_length);
+		spectrogram = colorize_spectrogram (grayscale_spectrogram, data_length*WINDOW_OVERLAP);
 		free (grayscale_spectrogram);
 	}
 	
 	if (options.generate_png) {
 		out_filename = replace_extension (filename, ".png");
 		if (options.color) {
-			export_color_png (spectrogram, window, data_length/window, window, out_filename);
+			export_color_png (spectrogram, window, WINDOW_OVERLAP*data_length/window, window, out_filename);
 		} else {
-			export_grayscale_png (spectrogram, window, data_length/window, window, out_filename);
+			export_grayscale_png (spectrogram, window, WINDOW_OVERLAP*data_length/window, window, out_filename);
 		}
 		free (out_filename);
 	}
@@ -104,6 +106,7 @@ struct program_options get_options (int argc, char *args[]) {
 	struct program_options options;
 
 	options.loading_error = NULL;
+	options.color = 0;
 
 	if (argc < 1) {
 		print_usage (args[0]);

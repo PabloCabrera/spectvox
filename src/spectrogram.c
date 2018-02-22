@@ -13,20 +13,20 @@ long hann (double *data, long length, double *output) {
 	return length;
 }
 
-double *generate_smooth_spectrogram (double data[], long length, long window) {
-	double *spectrogram = generate_spectrogram (data, length, window);
-	smooth_spectrogram (spectrogram, length);
+double *generate_smooth_spectrogram (double data[], long length, long window, unsigned overlap) {
+	double *spectrogram = generate_spectrogram (data, length, window, overlap);
+	smooth_spectrogram (spectrogram, length*overlap);
 	return spectrogram;
 }
 
-double *generate_spectrogram (double data[], long length, long window) {
+double *generate_spectrogram (double data[], long length, long window, unsigned overlap) {
 	fftw_plan plan;
-	double *output = malloc (sizeof(double) * length);
+	double *output = malloc (sizeof(double) * overlap * length);
 	double *data_hanned = malloc (sizeof (double) * window);
 	/* warning: el procesamiento se trunca a un multiplo de window */
-	for (long position = 0; position + window <= length; position += window) {
+	for (long position = 0; position + window/overlap <= length; position += window/overlap) {
 		hann (data + position, window, data_hanned);
-		plan = fftw_plan_r2r_1d (window, data_hanned, output + position, FFTW_REDFT00, FFTW_ESTIMATE);
+		plan = fftw_plan_r2r_1d (window, data_hanned, output + overlap*position, FFTW_REDFT00, FFTW_ESTIMATE);
 		fftw_execute (plan);
 		fftw_destroy_plan (plan);
 	}
@@ -96,7 +96,7 @@ double smooth (double valor) {
 	} else if (valor <= 0) {
 		return 0;
 	} else {
-		return ((M_PI/2+asin(((2*valor-1))))/M_PI);
+		return (M_PI/2+asin(((2*valor-1))))/M_PI;
 	}
 }
 
