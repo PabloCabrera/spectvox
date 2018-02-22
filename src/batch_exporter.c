@@ -82,9 +82,9 @@ void nextstep (char *filename, struct program_options options, bool color) {
 	if (options.generate_raw) {
 		out_filename = replace_extension (filename, ".raw");
 		if (options.color) {
-			export_raw_spectrogram (spectrogram, 3*data_length, out_filename);
+			export_raw_spectrogram (spectrogram, 3*data_length*WINDOW_OVERLAP, out_filename);
 		} else {
-			export_raw_spectrogram (spectrogram, data_length, out_filename);
+			export_raw_spectrogram (spectrogram, data_length*WINDOW_OVERLAP, out_filename);
 		}
 		free (out_filename);
 	}
