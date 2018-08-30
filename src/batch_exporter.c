@@ -9,7 +9,7 @@
 #include "spectrogram.h"
 
 #define SPECTROGRAM_WINDOW_SIZE_DEFAULT 128
-#define WINDOW_OVERLAP 4
+#define WINDOW_OVERLAP 4 
 
 /* DATA TYPES */
 struct program_options {
@@ -56,6 +56,21 @@ int main (int argc, char *args[]) {
 	return 0;
 }
 
+long reload_data_length (double *spectrogram, long length, long window, unsigned overlap) {
+	long limit=0;
+	long pos=0;
+
+	for (pos=0; pos < (overlap*length)-1; pos++) {
+		if (spectrogram[pos] > 0.2) {
+			limit = pos;
+		}
+	}
+
+	long new_length = (window * (limit/window))/overlap;
+	printf ("LENGTH: old=%d, new=%d, last_val=%f\n", length, new_length, spectrogram[limit]);
+	return new_length;
+}
+
 void nextstep (char *filename, struct program_options options, bool color) {
 	double *wav_data, *spectrogram;
 	long data_length = load_wav (filename, &wav_data);
@@ -63,7 +78,9 @@ void nextstep (char *filename, struct program_options options, bool color) {
 	char *out_filename;
 	
 	spectrogram = generate_smooth_spectrogram (wav_data, data_length, window, WINDOW_OVERLAP);
-	//spectrogram = generate_spectrogram (wav_data, data_length, window, WINDOW_OVERLAP);
+	window = window/2;
+	data_length = data_length/2;
+	data_length = reload_data_length (spectrogram, data_length, window, WINDOW_OVERLAP);
 	if (options.color) {
 		double *grayscale_spectrogram = spectrogram;
 		spectrogram = colorize_spectrogram (grayscale_spectrogram, data_length*WINDOW_OVERLAP);

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <math.h>
+#include <string.h>
 #include <fftw3.h>
 
 #include "spectrogram.h"
@@ -15,22 +16,31 @@ long hann (double *data, long length, double *output) {
 
 double *generate_smooth_spectrogram (double data[], long length, long window, unsigned overlap) {
 	double *spectrogram = generate_spectrogram (data, length, window, overlap);
-	smooth_spectrogram (spectrogram, length*overlap);
+	smooth_spectrogram (spectrogram, length*overlap/2);
 	return spectrogram;
 }
 
-double *generate_spectrogram (double data[], long length, long window, unsigned overlap) {
+double *generate_spectrogram (double data[], long in_length, long window, unsigned overlap) {
 	fftw_plan plan;
-	double *output = malloc (sizeof(double) * overlap * length);
+	long out_length = in_length/2;
+	double *output = malloc (sizeof (double) * overlap * out_length);
 	double *data_hanned = malloc (sizeof (double) * window);
+	fftw_complex *buffer = malloc (sizeof (fftw_complex) * window);
+
 	/* warning: el procesamiento se trunca a un multiplo de window */
-	for (long position = 0; position + window/overlap <= length; position += window/overlap) {
+	for (long position = 0; position + window/overlap < in_length; position += window/overlap) {
 		hann (data + position, window, data_hanned);
-		plan = fftw_plan_r2r_1d (window, data_hanned, output + overlap*position, FFTW_REDFT00, FFTW_ESTIMATE);
+		plan = fftw_plan_dft_r2c_1d (window, data_hanned, buffer, FFTW_ESTIMATE);
 		fftw_execute (plan);
+		long pos_out;
+		for (pos_out=0; pos_out < window; pos_out++) {
+			output [position*overlap/2+pos_out] = sqrt (pow (buffer[pos_out][0], 2) + pow (buffer[pos_out][1], 2));
+		}
 		fftw_destroy_plan (plan);
 	}
+	free (buffer);
 	free (data_hanned);
+
 	return output;
 }
 
@@ -85,11 +95,11 @@ long import_raw_spectrogram (double **data, char *filename) {
 
 void smooth_spectrogram (double *input, long data_length) {
 	int i;
-	for (i=0; i < data_length; i++) {
-		input[i] = smooth (input[i]);
-	}
+		for (i=0; i < data_length; i++) {
+			input[i] = smooth (input[i]);
+		}
 }
-
+ 
 double smooth (double valor) {
 	if (valor >= 1) {
 		return 1;
@@ -98,5 +108,40 @@ double smooth (double valor) {
 	} else {
 		return (M_PI/2+asin(((2*valor-1))))/M_PI;
 	}
+}
+ 
+void smooth_spectrogram_blur (double *input, long data_length, int window) {
+	int i, row, col, max_cols;
+	double neigh[9];
+	double *copy = malloc (data_length * sizeof (double));
+	memcpy (copy, input, data_length * sizeof (double));
+	max_cols = data_length/window;
+	for (i=0; i < data_length; i++) {
+			col = i / window;
+			row = i % window;
+
+			neigh[0] = (col>0 && row>0)? copy[i-window-1]: copy[i];
+			neigh[1] = (col>0)? copy[i-window]: copy[i];
+			neigh[2] = (col>0 && row<(window-1))? copy[i-window+1]: copy[i];
+
+			neigh[3] = (row>0)? copy[i-1]: copy[i];
+			neigh[4] = copy[i];
+			neigh[5] = (row<window-1)? copy[i+1]: copy[i];
+
+			neigh[6] = (col<max_cols && row>0)? copy[i+window-1]: copy[i];
+			neigh[7] = (col<max_cols)? copy[i+window]: copy[i];
+			neigh[8] = (col<max_cols && row<(window-1))? copy[i+window+1]: copy[i];
+
+			input[i] = smooth_blur (neigh);
+	}
+	free (copy);
+}
+double smooth_blur (double *neigh) {
+	int p;
+	double sum=0;
+	for (p=0; p<9; p++) {
+		sum += neigh[p];
+	}
+	return smooth (sum/9);
 }
 
